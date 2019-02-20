@@ -20,7 +20,7 @@ public:
 
     Three()
         : _modules()
-        , _pythonHome(NULL) {};
+        , _pythonBinPath(NULL) {};
     ~Three();
 
     bool init(const char *pythonHome);
@@ -49,7 +49,7 @@ private:
     typedef std::map<six_module_t, PyMethods> PyModules;
 
     PyModules _modules;
-    wchar_t *_pythonHome;
+    wchar_t *_pythonBinPath;
 };
 
 #ifdef __cplusplus

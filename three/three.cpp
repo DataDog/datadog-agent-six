@@ -51,8 +51,8 @@ INIT_PYTHON_MODULE(DATADOG_AGENT_SIX_KUBEUTIL, kubeutil)
 INIT_PYTHON_MODULE(DATADOG_AGENT_SIX_TAGGER, tagger)
 
 Three::~Three() {
-    if (_pythonHome) {
-        PyMem_RawFree((void *)_pythonHome);
+    if (_pythonBinPath) {
+        PyMem_RawFree((void *)_pythonBinPath);
     }
     Py_Finalize();
     ModuleConstants.clear();
@@ -69,15 +69,22 @@ bool Three::init(const char *pythonHome) {
     APPEND_TO_PYTHON_INITTAB(DATADOG_AGENT_SIX_TAGGER, tagger)
 
     if (pythonHome == NULL) {
-        _pythonHome = Py_DecodeLocale(_defaultPythonHome, NULL);
+        _pythonBinPath = Py_DecodeLocale(_defaultPythonHome, NULL);
     } else {
-        if (_pythonHome) {
-            PyMem_RawFree((void *)_pythonHome);
+        if (_pythonBinPath) {
+            PyMem_RawFree((void *)_pythonBinPath);
         }
-        _pythonHome = Py_DecodeLocale(pythonHome, NULL);
+        const char *pathSuffix ="/bin/python3";
+        char *progName = (char*)malloc(sizeof(char*)*(strlen(pythonHome)+strlen(pathSuffix)+1));
+
+        strcpy(progName,pythonHome);
+        strcat(progName, pathSuffix);
+
+        _pythonBinPath = Py_DecodeLocale(progName, NULL);
+        free(progName);
     }
 
-    Py_SetPythonHome(_pythonHome);
+    Py_SetProgramName(_pythonBinPath);
     Py_Initialize();
 
     return true;
