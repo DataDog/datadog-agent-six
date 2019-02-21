@@ -27,9 +27,15 @@ DATADOG_AGENT_SIX_API int add_python_path(six_t *, const char *path);
 DATADOG_AGENT_SIX_API int add_module_func(six_t *, six_module_t module, six_module_func_t func_type, char *func_name,
                                           void *func);
 DATADOG_AGENT_SIX_API int add_module_int_const(six_t *, six_module_t module, const char *name, long value);
-DATADOG_AGENT_SIX_API six_gilstate_t ensure_gil(six_t *);
 DATADOG_AGENT_SIX_API void clear_error(six_t *);
+
+DATADOG_AGENT_SIX_API six_gilstate_t ensure_gil(six_t *);
 DATADOG_AGENT_SIX_API void release_gil(six_t *, six_gilstate_t);
+
+DATADOG_AGENT_SIX_API int get_class(six_t *, const char *name, six_pyobject_t **py_class);
+DATADOG_AGENT_SIX_API int get_class_version(six_t *, six_pyobject_t *py_class, char **version);
+DATADOG_AGENT_SIX_API int get_class_file(six_t *, six_pyobject_t *py_class, char **file);
+
 DATADOG_AGENT_SIX_API int get_check(six_t *, const char *name, const char *init_config, const char *instances,
                                     six_pyobject_t **check, char **version);
 DATADOG_AGENT_SIX_API const char *run_check(six_t *, six_pyobject_t *check);

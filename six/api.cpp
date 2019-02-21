@@ -207,6 +207,18 @@ void release_gil(six_t *six, six_gilstate_t state) {
     AS_TYPE(Six, six)->GILRelease(state);
 }
 
+int get_class(six_t *six, const char *name, six_pyobject_t **py_class) {
+    return AS_TYPE(Six, six)->getClass(name, *AS_PTYPE(SixPyObject, py_class)) ? 1 : 0;
+}
+
+int get_class_version(six_t *six, six_pyobject_t *py_class, char **version) {
+    return AS_TYPE(Six, six)->getClassVersion(AS_TYPE(SixPyObject, py_class), *version) ? 1 : 0;
+}
+
+int get_class_file(six_t *six, six_pyobject_t *py_class, char **file) {
+    return AS_TYPE(Six, six)->getClassFile(AS_TYPE(SixPyObject, py_class), *file) ? 1 : 0;
+}
+
 int get_check(six_t *six, const char *name, const char *init_config, const char *instances, six_pyobject_t **check,
               char **version) {
     return AS_TYPE(Six, six)->getCheck(name, init_config, instances, *AS_PTYPE(SixPyObject, check), *version) ? 1 : 0;

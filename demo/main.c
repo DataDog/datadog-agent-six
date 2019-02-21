@@ -85,10 +85,43 @@ int main(int argc, char *argv[]) {
     run_simple_string(six, code);
 
     // load the Directory check if available
+    six_pyobject_t *py_class;
+
+    int ok = get_class(six, "datadog_checks.directory", &py_class);
+    if (!ok) {
+        if (has_error(six)) {
+            printf("error getting class: %s\n", get_error(six));
+        }
+        return 1;
+    }
+
     char *version = NULL;
+    ok = get_class_version(six, py_class, &version);
+    if (!ok) {
+        if (has_error(six)) {
+            printf("error getting class version: %s\n", get_error(six));
+        }
+        return 1;
+    }
+    printf("Directory version: %s.\n", version);
+    free(version);
+
+    char *file = NULL;
+    ok = get_class_file(six, py_class, &file);
+    if (!ok) {
+        if (has_error(six)) {
+            printf("error getting class file: %s\n", get_error(six));
+        }
+        return 1;
+    }
+    printf("Directory file: %s.\n", file);
+    free(file);
+
+    // load the Directory check if available
+    version = NULL;
     six_pyobject_t *check;
 
-    int ok = get_check(six, "datadog_checks.directory", "", "[{directory: \"/\"}]", &check, &version);
+    ok = get_check(six, "datadog_checks.directory", "", "[{directory: \"/\"}]", &check, &version);
     if (!ok) {
         if (has_error(six)) {
             printf("error loading check: %s\n", get_error(six));

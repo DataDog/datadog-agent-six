@@ -28,6 +28,11 @@ public:
     virtual bool addPythonPath(const char *path) = 0;
     virtual six_gilstate_t GILEnsure() = 0;
     virtual void GILRelease(six_gilstate_t) = 0;
+
+    virtual bool getClass(const char *module, SixPyObject *&pyClass);
+    virtual bool getClassVersion(SixPyObject *py_class, char *&version);
+    virtual bool getClassFile(SixPyObject *py_class, char *&file);
+
     virtual bool getCheck(const char *name, const char *init_config, const char *instances, SixPyObject *&check,
                           char *&version)
         = 0;

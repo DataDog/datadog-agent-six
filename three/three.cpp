@@ -191,6 +191,50 @@ void Three::GILRelease(six_gilstate_t state) {
     }
 }
 
+bool Three::getClass(const char *module, SixPyObject *&pyClass) {
+    PyObject *obj_module = NULL;
+    PyObject *klass = NULL;
+
+    obj_module = PyImport_ImportModule(module);
+    if (obj_module == NULL) {
+        std::ostringstream err;
+        err << "unable to import module '" << module << "': " + _fetchPythonError();
+        setError(err.str());
+        goto done;
+    }
+
+    // find a subclass of the base check
+    klass = _findSubclassOf(_baseClass, obj_module);
+    if (klass == NULL) {
+        std::ostringstream err;
+        err << "unable to find a subclass of the base check in module '" << module << "': " << _fetchPythonError();
+        setError(err.str());
+        goto done;
+    }
+
+done:
+    Py_XDECREF(obj_module);
+
+    if (klass == NULL) {
+        return false;
+    }
+
+    pyClass = reinterpret_cast<SixPyObject *>(klass);
+    return true;
+}
+
+bool Three::getClassVersion(SixPyObject *py_class, char *&version) {
+    PyObject *py_obj = reinterpret_cast<PyObject *>(py_class);
+    version = _getStringAttr(py_obj, "__version__");
+    return version == NULL ? false : true;
+}
+
+bool Three::getClassFile(SixPyObject *py_class, char *&file) {
+    PyObject *py_obj = reinterpret_cast<PyObject *>(py_class);
+    file = _getStringAttr(py_obj, "__file__");
+    return file == NULL ? false : true;
+}
+
 bool Three::getCheck(const char *module, const char *init_config_str, const char *instances_str, SixPyObject *&pycheck,
                      char *&version) {
     PyObject *obj_module = NULL;
@@ -222,7 +266,7 @@ bool Three::getCheck(const char *module, const char *init_config_str, const char
     }
 
     // try to get Check version
-    version = _getCheckVersion(obj_module);
+    version = _getStringAttr(obj_module, "__version__");
 
     // call `AgentCheck.load_config(init_config)`
     init_config = PyObject_CallMethod(klass, load_config, format, init_config_str);
@@ -493,34 +537,32 @@ std::string Three::_fetchPythonError() const {
     return ret_val;
 }
 
-char *Three::_getCheckVersion(PyObject *module) const {
-    if (module == NULL) {
+char *Three::_getStringAttr(PyObject *obj, const char *attributeName) const {
+    if (obj == NULL) {
         return NULL;
     }
 
     char *ret = NULL;
-    PyObject *py_version = NULL;
-    PyObject *py_version_bytes = NULL;
-    char version_field[] = "__version__";
+    PyObject *py_attr = NULL;
+    PyObject *py_attr_bytes = NULL;
 
-    // try getting module.__version__
-    py_version = PyObject_GetAttrString(module, version_field);
-    if (py_version != NULL && PyUnicode_Check(py_version)) {
-        py_version_bytes = PyUnicode_AsEncodedString(py_version, "UTF-8", "strict");
-        if (py_version_bytes == NULL) {
-            setError("error converting __version__ to string: " + _fetchPythonError());
+    py_attr = PyObject_GetAttrString(obj, attributeName);
+    if (py_attr != NULL && PyUnicode_Check(py_attr)) {
+        py_attr_bytes = PyUnicode_AsEncodedString(py_attr, "UTF-8", "strict");
+        if (py_attr_bytes == NULL) {
+            setError("error converting " + std::string(attributeName) + " to string: " + _fetchPythonError());
             ret = NULL;
             goto done;
         }
-        ret = _strdup(PyBytes_AsString(py_version_bytes));
+        ret = _strdup(PyBytes_AsString(py_attr_bytes));
         goto done;
     } else {
-        // we expect __version__ might not be there, don't clutter the error stream
+        // we expect that attribute might not be there, don't clutter the error stream
         PyErr_Clear();
     }
 
 done:
-    Py_XDECREF(py_version);
-    Py_XDECREF(py_version_bytes);
+    Py_XDECREF(py_attr);
+    Py_XDECREF(py_attr_bytes);
     return ret;
 }

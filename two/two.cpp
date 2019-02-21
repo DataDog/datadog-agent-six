@@ -188,6 +188,50 @@ done:
     return reinterpret_cast<SixPyObject *>(klass);
 }
 
+bool Two::getClass(const char *module, SixPyObject *&pyClass) {
+    PyObject *obj_module = NULL;
+    PyObject *klass = NULL;
+
+    obj_module = PyImport_ImportModule(module);
+    if (obj_module == NULL) {
+        std::ostringstream err;
+        err << "unable to import module '" << module << "': " + _fetchPythonError();
+        setError(err.str());
+        goto done;
+    }
+
+    // find a subclass of the base check
+    klass = _findSubclassOf(_baseClass, obj_module);
+    if (klass == NULL) {
+        std::ostringstream err;
+        err << "unable to find a subclass of the base check in module '" << module << "': " << _fetchPythonError();
+        setError(err.str());
+        goto done;
+    }
+
+done:
+    Py_XDECREF(obj_module);
+
+    if (klass == NULL) {
+        return false;
+    }
+
+    pyClass = reinterpret_cast<SixPyObject *>(klass);
+    return true;
+}
+
+bool Two::getClassVersion(SixPyObject *py_class, char *&version) {
+    PyObject *py_obj = reinterpret_cast<PyObject *>(py_class);
+    version = _getStringAttr(py_obj, "__version__");
+    return version == NULL ? false : true;
+}
+
+bool Two::getClassFile(SixPyObject *py_class, char *&file) {
+    PyObject *py_obj = reinterpret_cast<PyObject *>(py_class);
+    file = _getStringAttr(py_obj, "__file__");
+    return file == NULL ? false : true;
+}
+
 bool Two::getCheck(const char *module, const char *init_config_str, const char *instances_str, SixPyObject *&pycheck,
                    char *&version) {
     PyObject *obj_module = NULL;
@@ -220,7 +264,7 @@ bool Two::getCheck(const char *module, const char *init_config_str, const char *
     }
 
     // try to get Check version
-    version = _getCheckVersion(obj_module);
+    version = _getStringAttr(obj_module, "__version__");
 
     // call `AgentCheck.load_config(init_config)`
     init_config = PyObject_CallMethod(klass, load_config, format, init_config_str);
@@ -446,26 +490,24 @@ std::string Two::_fetchPythonError() {
     return ret_val;
 }
 
-char *Two::_getCheckVersion(PyObject *module) const {
-    if (module == NULL) {
+char *Two::_getStringAttr(PyObject *obj, const char *attributeName) const {
+    if (obj == NULL) {
         return NULL;
     }
 
     char *ret = NULL;
-    PyObject *py_version = NULL;
-    char version_field[] = "__version__";
+    PyObject *py_attribute = NULL;
 
-    // try getting module.__version__
-    py_version = PyObject_GetAttrString(module, version_field);
-    if (py_version != NULL && PyString_Check(py_version)) {
-        ret = _strdup(PyString_AS_STRING(py_version));
+    py_attribute = PyObject_GetAttrString(obj, attributeName);
+    if (py_attribute != NULL && PyString_Check(py_attribute)) {
+        ret = _strdup(PyString_AS_STRING(py_attribute));
         goto done;
     } else {
-        // we expect __version__ might not be there, don't clutter the error stream
+        // we expect that attribute might not be there, don't clutter the error stream
         PyErr_Clear();
     }
 
 done:
-    Py_XDECREF(py_version);
+    Py_XDECREF(py_attribute);
     return ret;
 }
