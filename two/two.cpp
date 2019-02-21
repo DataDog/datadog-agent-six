@@ -190,33 +190,16 @@ done:
 
 bool Two::getClass(const char *module, SixPyObject *&pyClass) {
     PyObject *obj_module = NULL;
-    PyObject *klass = NULL;
 
     obj_module = PyImport_ImportModule(module);
     if (obj_module == NULL) {
         std::ostringstream err;
         err << "unable to import module '" << module << "': " + _fetchPythonError();
         setError(err.str());
-        goto done;
-    }
-
-    // find a subclass of the base check
-    klass = _findSubclassOf(_baseClass, obj_module);
-    if (klass == NULL) {
-        std::ostringstream err;
-        err << "unable to find a subclass of the base check in module '" << module << "': " << _fetchPythonError();
-        setError(err.str());
-        goto done;
-    }
-
-done:
-    Py_XDECREF(obj_module);
-
-    if (klass == NULL) {
         return false;
     }
 
-    pyClass = reinterpret_cast<SixPyObject *>(klass);
+    pyClass = reinterpret_cast<SixPyObject *>(obj_module);
     return true;
 }
 

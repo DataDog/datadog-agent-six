@@ -87,11 +87,13 @@ int main(int argc, char *argv[]) {
     // load the Directory check if available
     six_pyobject_t *py_class;
 
+    printf("importing check\n");
     int ok = get_class(six, "datadog_checks.directory", &py_class);
     if (!ok) {
         if (has_error(six)) {
             printf("error getting class: %s\n", get_error(six));
         }
+        printf("Failed to get_class\n");
         return 1;
     }
 
@@ -101,6 +103,7 @@ int main(int argc, char *argv[]) {
         if (has_error(six)) {
             printf("error getting class version: %s\n", get_error(six));
         }
+        printf("Failed to get_version\n");
         return 1;
     }
     printf("Directory version: %s.\n", version);
@@ -112,6 +115,7 @@ int main(int argc, char *argv[]) {
         if (has_error(six)) {
             printf("error getting class file: %s\n", get_error(six));
         }
+        printf("Failed to get_file\n");
         return 1;
     }
     printf("Directory file: %s.\n", file);
