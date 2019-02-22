@@ -188,8 +188,9 @@ done:
     return reinterpret_cast<SixPyObject *>(klass);
 }
 
-bool Two::getClass(const char *module, SixPyObject *&pyClass) {
+bool Two::getClass(const char *module, SixPyObject *&pyModule, SixPyObject *&pyClass) {
     PyObject *obj_module = NULL;
+    PyObject *obj_class = NULL;
 
     obj_module = PyImport_ImportModule(module);
     if (obj_module == NULL) {
@@ -199,7 +200,17 @@ bool Two::getClass(const char *module, SixPyObject *&pyClass) {
         return false;
     }
 
-    pyClass = reinterpret_cast<SixPyObject *>(obj_module);
+    obj_class = _findSubclassOf(_baseClass, obj_module);
+    if (obj_class == NULL) {
+        std::ostringstream err;
+        err << "unable to find a subclass of the base check in module '" << module << "': " << _fetchPythonError();
+        setError(err.str());
+        Py_XDECREF(obj_module);
+        return false;
+    }
+
+    pyModule = reinterpret_cast<SixPyObject *>(obj_module);
+    pyClass = reinterpret_cast<SixPyObject *>(obj_class);
     return true;
 }
 
@@ -215,39 +226,18 @@ bool Two::getClassFile(SixPyObject *py_class, char *&file) {
     return file == NULL ? false : true;
 }
 
-bool Two::getCheck(const char *module, const char *init_config_str, const char *instances_str, SixPyObject *&pycheck,
-                   char *&version) {
-    PyObject *obj_module = NULL;
-    PyObject *klass = NULL;
+bool Two::getCheck(SixPyObject *py_class, const char *init_config_str, const char *instance_str, const char *agent_config,
+                  const char *check_id, SixPyObject *&pycheck) {
+    PyObject *klass = reinterpret_cast<PyObject *>(py_class);
     PyObject *init_config = NULL;
-    PyObject *instances = NULL;
+    PyObject *instance = NULL;
     PyObject *check = NULL;
     PyObject *args = NULL;
     PyObject *kwargs = NULL;
+    PyObject *py_check_id = NULL;
 
     char load_config[] = "load_config";
     char format[] = "(s)"; // use parentheses to force Tuple creation
-
-    // try to import python module containing the check
-    obj_module = PyImport_ImportModule(module);
-    if (obj_module == NULL) {
-        std::ostringstream err;
-        err << "unable to import module '" << module << "': " + _fetchPythonError();
-        setError(err.str());
-        goto done;
-    }
-
-    // find a subclass of the base check
-    klass = _findSubclassOf(_baseClass, obj_module);
-    if (klass == NULL) {
-        std::ostringstream err;
-        err << "unable to find a subclass of the base check in module '" << module << "': " << _fetchPythonError();
-        setError(err.str());
-        goto done;
-    }
-
-    // try to get Check version
-    version = _getStringAttr(obj_module, "__version__");
 
     // call `AgentCheck.load_config(init_config)`
     init_config = PyObject_CallMethod(klass, load_config, format, init_config_str);
@@ -256,10 +246,10 @@ bool Two::getCheck(const char *module, const char *init_config_str, const char *
         goto done;
     }
 
-    // call `AgentCheck.load_config(instances)`
-    instances = PyObject_CallMethod(klass, load_config, format, instances_str);
-    if (instances == NULL) {
-        setError("error parsing instances: " + _fetchPythonError());
+    // call `AgentCheck.load_config(instance)`
+    instance = PyObject_CallMethod(klass, load_config, format, instance_str);
+    if (instance == NULL) {
+        setError("error parsing instance: " + _fetchPythonError());
         goto done;
     }
 
@@ -267,7 +257,7 @@ bool Two::getCheck(const char *module, const char *init_config_str, const char *
     args = PyTuple_New(0);
     kwargs = PyDict_New();
     PyDict_SetItemString(kwargs, "init_config", init_config);
-    PyDict_SetItemString(kwargs, "instances", instances);
+    PyDict_SetItemString(kwargs, "instances", instance);
 
     // call `AgentCheck` constructor
     check = PyObject_Call(klass, args, kwargs);
@@ -276,11 +266,29 @@ bool Two::getCheck(const char *module, const char *init_config_str, const char *
         goto done;
     }
 
+    if (check_id != NULL && strlen(check_id) != 0) {
+        py_check_id = PyString_FromString(check_id);
+        if (py_check_id == NULL) {
+            std::ostringstream err;
+            err << "error could not set check_id: " << check_id;
+            setError(err.str());
+            Py_XDECREF(check);
+            check = NULL;
+            goto done;
+        }
+
+        if (PyObject_SetAttrString(check, "check_id", py_check_id) != 0) {
+            setError("error could not set 'check_id' attr: " + _fetchPythonError());
+            Py_XDECREF(check);
+            check = NULL;
+            goto done;
+        }
+    }
+
 done:
-    Py_XDECREF(obj_module);
-    Py_XDECREF(klass);
+    Py_XDECREF(py_check_id);
     Py_XDECREF(init_config);
-    Py_XDECREF(instances);
+    Py_XDECREF(instance);
     Py_XDECREF(args);
     Py_XDECREF(kwargs);
 

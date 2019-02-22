@@ -29,12 +29,14 @@ public:
     void GILRelease(six_gilstate_t);
     SixPyObject *getCheckClass(const char *module);
 
-    bool getClass(const char *module, SixPyObject *&pyClass);
+    bool getClass(const char *module, SixPyObject *&pyModule, SixPyObject *&pyClass);
     bool getClassVersion(SixPyObject *py_class, char *&version);
     bool getClassFile(SixPyObject *py_class, char *&file);
+    bool getCheck(SixPyObject *py_class, const char *init_config, const char *instance, const char *agent_config,
+                  const char *check_id, SixPyObject *&check);
 
-    bool getCheck(const char *module, const char *init_config, const char *instances, SixPyObject *&check,
-                  char *&version);
+    // bool getCheck(const char *module, const char *init_config, const char *instances, SixPyObject *&check,
+    //              char *&version);
     const char *runCheck(SixPyObject *check);
 
     // const API

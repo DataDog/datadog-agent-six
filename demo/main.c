@@ -85,10 +85,11 @@ int main(int argc, char *argv[]) {
     run_simple_string(six, code);
 
     // load the Directory check if available
+    six_pyobject_t *py_module;
     six_pyobject_t *py_class;
 
     printf("importing check\n");
-    int ok = get_class(six, "datadog_checks.directory", &py_class);
+    int ok = get_class(six, "datadog_checks.directory", &py_module, &py_class);
     if (!ok) {
         if (has_error(six)) {
             printf("error getting class: %s\n", get_error(six));
@@ -98,7 +99,7 @@ int main(int argc, char *argv[]) {
     }
 
     char *version = NULL;
-    ok = get_class_version(six, py_class, &version);
+    ok = get_class_version(six, py_module, &version);
     if (!ok) {
         if (has_error(six)) {
             printf("error getting class version: %s\n", get_error(six));
@@ -106,11 +107,9 @@ int main(int argc, char *argv[]) {
         printf("Failed to get_version\n");
         return 1;
     }
-    printf("Directory version: %s.\n", version);
-    free(version);
 
     char *file = NULL;
-    ok = get_class_file(six, py_class, &file);
+    ok = get_class_file(six, py_module, &file);
     if (!ok) {
         if (has_error(six)) {
             printf("error getting class file: %s\n", get_error(six));
@@ -118,25 +117,24 @@ int main(int argc, char *argv[]) {
         printf("Failed to get_file\n");
         return 1;
     }
-    printf("Directory file: %s.\n", file);
+    if (version != NULL) {
+        printf("Successfully imported Directory integration v%s.\n", version);
+    } else {
+        printf("Successfully imported Directory integration.\n");
+    }
+    printf("Directory __file__: %s.\n", file);
+    free(version);
     free(file);
 
     // load the Directory check if available
-    version = NULL;
     six_pyobject_t *check;
 
-    ok = get_check(six, "datadog_checks.directory", "", "[{directory: \"/\"}]", &check, &version);
+    ok = get_check(six, py_class, "", "[{directory: \"/\"}]", "", "directoryID", &check);
     if (!ok) {
         if (has_error(six)) {
             printf("error loading check: %s\n", get_error(six));
         }
         return 1;
-    }
-
-    if (version != NULL) {
-        printf("Successfully imported Directory integration v%s.\n", version);
-    } else {
-        printf("Successfully imported Directory integration.\n");
     }
 
     const char *result = run_check(six, check);

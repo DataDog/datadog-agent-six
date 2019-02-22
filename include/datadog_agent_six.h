@@ -32,12 +32,15 @@ DATADOG_AGENT_SIX_API void clear_error(six_t *);
 DATADOG_AGENT_SIX_API six_gilstate_t ensure_gil(six_t *);
 DATADOG_AGENT_SIX_API void release_gil(six_t *, six_gilstate_t);
 
-DATADOG_AGENT_SIX_API int get_class(six_t *, const char *name, six_pyobject_t **py_class);
+DATADOG_AGENT_SIX_API int get_class(six_t *six, const char *name, six_pyobject_t **py_module,
+                                    six_pyobject_t **py_class);
 DATADOG_AGENT_SIX_API int get_class_version(six_t *, six_pyobject_t *py_class, char **version);
 DATADOG_AGENT_SIX_API int get_class_file(six_t *, six_pyobject_t *py_class, char **file);
 
-DATADOG_AGENT_SIX_API int get_check(six_t *, const char *name, const char *init_config, const char *instances,
-                                    six_pyobject_t **check, char **version);
+DATADOG_AGENT_SIX_API int get_check(six_t *six, six_pyobject_t *py_class, const char *init_config, const char *instance,
+                                    const char *agent_config, const char *check_id, six_pyobject_t **check);
+// DATADOG_AGENT_SIX_API int get_check(six_t *, const char *name, const char *init_config, const char *instances,
+//                                    six_pyobject_t **check, char **version);
 DATADOG_AGENT_SIX_API const char *run_check(six_t *, six_pyobject_t *check);
 
 // C CONST API
