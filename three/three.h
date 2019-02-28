@@ -74,6 +74,7 @@ private:
     wchar_t *_pythonHome;
     PyObject *_baseClass;
     PyPaths _pythonPaths;
+    PyThreadState *_threadState;
 };
 
 #endif
