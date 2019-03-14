@@ -5,7 +5,7 @@ skip_branch_with_pr: true
 
 clone_folder: C:\gopath\src\github.com\DataDog\datadog-agent-six
 
-# environment must be set for python 64 bit 
+# environment must be set for python 64 bit
 environment:
   GOPATH: C:\gopath
   GOROOT: C:\go111
@@ -20,17 +20,6 @@ install:
   - python --version
   - c:\python37-x64\python --version
   - gcc --version
-  - mkdir \dd
-  - cd \dd
-  - git clone https://github.com/datadog/integrations-core
-  - pip install pyyaml requests prometheus_client six
-  - pip3 install pyyaml requests prometheus_client six
-  - pip install integrations-core/datadog_checks_base/
-  - pip3 install integrations-core/datadog_checks_base/
-  - pip install -r integrations-core\directory\requirements.in
-  - pip3 install -r integrations-core\directory\requirements.in
-  - pip install integrations-core/directory/
-  - pip3 install integrations-core/directory/
 
 cache:
   - '%GOPATH%\bin'
@@ -41,9 +30,8 @@ build: off
 test_script:
   - cd %APPVEYOR_BUILD_FOLDER%
   - echo %Python3_ROOT_DIR%
-  - cmake -G "Unix Makefiles" .
-  - make
+  - cmake -G "Unix Makefiles" -BUILD_DEMO:bool=OFF .
   - set PATH=%PATH%;%CD%\bin
-  - bin\demo 2
-  - bin\demo 3
+  - make
+  - make clang-format
   - make -C test
