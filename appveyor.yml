@@ -25,12 +25,12 @@ install:
   - git clone https://github.com/datadog/integrations-core
   - pip install pyyaml requests prometheus_client six
   - pip3 install pyyaml requests prometheus_client six
-  - pip install integrations-core/datadog_checks_base/
-  - pip3 install integrations-core/datadog_checks_base/
+  - pip install --force-reinstall integrations-core/datadog_checks_base/
+  - pip3 install --force-reinstall integrations-core/datadog_checks_base/
   - pip install -r integrations-core\directory\requirements.in
   - pip3 install -r integrations-core\directory\requirements.in
-  - pip install integrations-core/directory/
-  - pip3 install integrations-core/directory/
+  - pip install --force-reinstall integrations-core/directory/
+  - pip3 install --force-reinstall integrations-core/directory/
 
 cache:
   - '%GOPATH%\bin'
@@ -44,6 +44,6 @@ test_script:
   - cmake -G "Unix Makefiles" .
   - make
   - set PATH=%PATH%;%CD%\bin
+  - make -C test
   - bin\demo 2
   - bin\demo 3
-  - make -C test
